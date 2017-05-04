@@ -2,3 +2,5 @@
 VBS Script that check's your Active Directory Health status and report to e-mail
 
 ![](https://i.imgur.com/zyd7YiY.png)
+
+Original idea: [Vikas Sukhija](https://gallery.technet.microsoft.com/scriptcenter/Active-Directory-Health-709336cd)
