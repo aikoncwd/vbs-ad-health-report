@@ -53,7 +53,12 @@ TimeStart = Timer()
 isError = False
 If usingOU Then
 	Set oRD = GetObject("LDAP://RootDSE")
-	Set oDC = GetObject("LDAP://ou=" & organizationUnitDC & ", " & oRD.Get("defaultNamingContext"))
+	Set getoDC = GetObject("LDAP://ou=" & organizationUnitDC & ", " & oRD.Get("defaultNamingContext"))
+	computers=Enumerate(getoDC)
+	For Each x in computers
+		'Wscript.Echo "-- " & x
+	Next
+	oDC = computers
 End If
 sHTML = ""
 sHTML = sHTML & "<html>" & vbCrLf
@@ -108,19 +113,30 @@ If hardwareReport Then
 	sHTML = sHTML & "<td align='center'><b><font color='white'>% Free</font></b></td>" & vbCrLf
 	sHTML = sHTML & "</tr>" & vbCrLf
 
-	If usingOU Then oDC.Filter = Array("Computer")
-
+	
 	For Each oComputer In oDC
-		If usingOU Then
-			remoteComputer = oComputer.CN
+		If checkPing(remoteComputer) Then
+			remoteComputer = oComputer		
+			sHTML = sHTML & "<tr>" & vbCrLf
+			sHTML = sHTML & "<td bgcolor='DarkGray' align=center><b>" & remoteComputer & "</b></td>" & vbCrLf
+			Call checkDiskUsage(remoteComputer)
+			Call checkRAMUsage(remoteComputer)
+			sHTML = sHTML & "</tr>" & vbCrLf
 		Else
+			isError=True
 			remoteComputer = oComputer
+			sHTML = sHTML & "<tr>" & vbCrLf
+			sHTML = sHTML & "<td bgcolor='DarkGray' align=center><b>" & remoteComputer & "</b></td>" & vbCrLf
+			celColor = "Red"			
+			sHTML = sHTML & "<td bgcolor='" & celColor & "' align=center><b>NO CONTACT</b></td>" & vbCrLf
+			sHTML = sHTML & "<td bgcolor='" & celColor & "' align=center><b>NO CONTACT</b></td>" & vbCrLf
+			sHTML = sHTML & "<td bgcolor='" & celColor & "' align=center><b>NO CONTACT</b></td>" & vbCrLf
+			sHTML = sHTML & "<td bgcolor='" & celColor & "' align=center><b>NO CONTACT</b></td>" & vbCrLf
+			sHTML = sHTML & "<td bgcolor='" & celColor & "' align=center><b>NO CONTACT</b></td>" & vbCrLf
+			sHTML = sHTML & "<td bgcolor='" & celColor & "' align=center><b>NO CONTACT</b></td>" & vbCrLf
+			sHTML = sHTML & "</tr>" & vbCrLf
+			
 		End If
-		sHTML = sHTML & "<tr>" & vbCrLf
-		sHTML = sHTML & "<td bgcolor='DarkGray' align=center><b>" & remoteComputer & "</b></td>" & vbCrLf
-		Call checkDiskUsage(remoteComputer)
-		Call checkRAMUsage(remoteComputer)
-		sHTML = sHTML & "</tr>" & vbCrLf
 	Next
 	sHTML = sHTML & "</table><br>"
 End If
@@ -147,14 +163,9 @@ sHTML = sHTML & "<td align='center'><b><font color='white'>SysVol</font></b></td
 sHTML = sHTML & "<td align='center'><b><font color='white'>Topology</font></b></td>" & vbCrLf
 sHTML = sHTML & "</tr>" & vbCrLf
 
-If usingOU Then oDC.Filter = Array("Computer")
 
 For Each oComputer In oDC
-	If usingOU Then
-		remoteComputer = oComputer.CN
-	Else
-		remoteComputer = oComputer
-	End If
+	remoteComputer = oComputer
 	sHTML = sHTML & "<tr>" & vbCrLf
 	sHTML = sHTML & "<td bgcolor='DarkGray' align=center><b>" & remoteComputer & "</b></td>" & vbCrLf
     If checkPing(remoteComputer) Then
@@ -288,6 +299,59 @@ End Function
 Function checkRepadmin()
 	Set oEXE = CreateObject("WScript.Shell").Exec("repadmin.exe /replsummary * /bysrc /bydest")
 	checkRepadmin = "<br><pre>" & oEXE.StdOut.ReadAll & "</pre><br>" & vbCrLf
+End Function
+
+Function Enumerate(OU)
+	Dim subOUcomputers
+
+	computers = Array()
+	OU.Filter = Array("computer")
+	For Each oComputer in OU		
+		'Wscript.Echo "-- " & oComputer.cn
+        	computers = AddComputerItem(computers,oComputer.cn)
+        Next
+	
+
+	OU.Filter = Array("container", "organizationalUnit")
+	For Each subou in OU
+	       	'Wscript.Echo "-- " & subou.name
+	       	subOUcomputers = Enumerate(subou)
+		computers = CombineArrays(computers,subOUcomputers)					
+        Next
+
+	For Each x in computers
+		'Wscript.Echo "-- " & x
+	Next
+
+	Enumerate = computers
+
+End Function
+
+Function AddComputerItem(arr, val)
+	If IsArray(arr) then
+		ReDim Preserve arr(UBound(arr) + 1)
+		arr(UBound(arr)) = val
+		AddComputerItem = arr
+	Else 
+		arr = Array(1)
+		arr(0) = val
+		AddComputerItem = arr
+	End If
+End Function
+
+Function CombineArrays(array1,array2)
+	Dim combinedarray
+	combinedarray = Array()
+	
+	For each x in array1
+		combinedarray=AddComputerItem(combinedarray,x)
+	Next
+
+	For each y in array2
+		combinedarray=AddComputerItem(combinedarray,y)
+	Next
+
+	CombineArrays = combinedarray
 End Function
 
 Function sendMail(txtBody)
