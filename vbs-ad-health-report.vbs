@@ -1,11 +1,49 @@
+'###################################################
+' 	TO-DO LIST
+' 	[ ] - Hardware report table
+' 	[ ] - Telegram reports
+'
+'###################################################
+'	IMPORTANT VARIABLES TO EDIT
+'###################################################
+	
+	serviceState = "Running" 'Translate this into your default System Language
+	organizationUnitDC = "Domain Controllers" 'Default OU where DC's are stored, edit if you a custom OU
+	
+	includeRepadmin = True 'Include the summary report below the table
+	
+	emailReport = True 'Send the report using e-mail
+	attachCSV = True 'Attach a CSV version of the replication report/summary
+	
+	saveReport = True 'Save a file with the report summary
+	pathReportOutput = "AD-health-summary.html" 'Path and name for the output file
+	
+	'E-mail settings, edit by your own
+	emailSubject = "Active Directory Health Summary"
+	emailFrom = "monitoring@mydomain.com"
+	emailTo = "jgonzalez@cet10.com"
+	emailCc = "" 
+	emailPort = 25
+	emailAuth = 1	
+	emailSenderUser = "monitoring@mydomain.com"
+	emailSenderPassword = "correcthorsebatterystaple"
+	emailServer = "mail.mydomain.com"
+	emailSSL = False
+	
+'###################################################
+'	END OF IMPOTANT VARIABLES TO EDIT
+'###################################################
+'	BEGIN OF CODE - DON'T EDIT
+'###################################################
+
 TimeStart = Timer()
 Set oRD = GetObject("LDAP://RootDSE")
-Set oDC = GetObject("LDAP://ou=Domain Controllers, " & oRD.Get("defaultNamingContext"))
+Set oDC = GetObject("LDAP://ou=" & organizationUnitDC & ", " & oRD.Get("defaultNamingContext"))
 
 sHTML = ""
 sHTML = sHTML & "<html>" & vbCrLf
 sHTML = sHTML & "<head>" & vbCrLf
-sHTML = sHTML & "<title>Active Directory Health Summary</title>" & vbCrLf
+sHTML = sHTML & "<title>" & emailSubject & "</title>" & vbCrLf
 sHTML = sHTML & "<style type='text/css'>" & vbCrLf
 sHTML = sHTML & "<!--" & vbCrLf
 sHTML = sHTML & "td {" & vbCrLf
@@ -35,7 +73,7 @@ sHTML = sHTML & "<body>" & vbCrLf
 sHTML = sHTML & "<table width='100%'>" & vbCrLf
 sHTML = sHTML & "<tr bgcolor='Lavender'>" & vbCrLf
 sHTML = sHTML & "<td colspan='7' height='25' align='center'>" & vbCrLf
-sHTML = sHTML & "<font face='tahoma' color='DarkBlue' size='4'><strong>Active Directory Health Summary</strong></font>" & vbCrLf
+sHTML = sHTML & "<font face='tahoma' color='DarkBlue' size='4'><strong>" & emailSubject & "</strong></font>" & vbCrLf
 sHTML = sHTML & "</td></tr></table>" & vbCrLf
 sHTML = sHTML & "<table width='100%'>" & vbCrLf
 sHTML = sHTML & "<tr bgcolor='FireBrick'>" & vbCrLf
@@ -58,19 +96,19 @@ oDC.Filter = Array("Computer")
 For Each oComputer In oDC
 	sHTML = sHTML & "<tr>" & vbCrLf
 	sHTML = sHTML & "<td bgcolor='DarkGray' align=center><b>" & oComputer.CN & "</b></td>" & vbCrLf
-    If CheckPing(oComputer.CN) Then
+    If checkPing(oComputer.CN) Then
 		sHTML = sHTML & "<td bgcolor='LightGreen' align=center><b>Success</b></td>" & vbCrLf
-		Call CheckService(oComputer.CN, "DNS")
-		Call CheckService(oComputer.CN, "NTDS")
-		Call CheckService(oComputer.CN, "Netlogon")
-		Call CheckDcDiag(oComputer.CN, "Connectivity")
-		Call CheckDcDiag(oComputer.CN, "Advertising")
-		Call CheckDcDiag(oComputer.CN, "NetLogons")
-		Call CheckDcDiag(oComputer.CN, "Services")
-		Call CheckDcDiag(oComputer.CN, "Replications")
-		Call CheckDcDiag(oComputer.CN, "FsmoCheck")
-		Call CheckDcDiag(oComputer.CN, "SysVolCheck")
-		Call CheckDcDiag(oComputer.CN, "Topology")
+		Call checkService(oComputer.CN, "DNS")
+		Call checkService(oComputer.CN, "NTDS")
+		Call checkService(oComputer.CN, "Netlogon")
+		Call checkDcDiag(oComputer.CN, "Connectivity")
+		Call checkDcDiag(oComputer.CN, "Advertising")
+		Call checkDcDiag(oComputer.CN, "NetLogons")
+		Call checkDcDiag(oComputer.CN, "Services")
+		Call checkDcDiag(oComputer.CN, "Replications")
+		Call checkDcDiag(oComputer.CN, "FsmoCheck")
+		Call checkDcDiag(oComputer.CN, "SysVolCheck")
+		Call checkDcDiag(oComputer.CN, "Topology")
 	Else
 		sHTML = sHTML & "<td bgcolor='Red' align=center><b>Failed</b></td>" & vbCrLf
 		sHTML = sHTML & "<td bgcolor='Red' align=center><b>Failed</b></td>" & vbCrLf
@@ -87,33 +125,52 @@ For Each oComputer In oDC
 	End If
 Next
 sHTML = sHTML & "</tr>"
-sHTML = sHTML & "</table><br>"
-sHTML = sHTML & CheckRepadmin()
-sHTML = sHTML & "<br><font face='tahoma' size='2'>Execution Time: <b>" & Round(Timer() - TimeStart, 2) & "s</b></font>"
+sHTML = sHTML & "</table>"
+If includeRepadmin Then sHTML = sHTML & checkRepadmin()
+sHTML = sHTML & "<font face='tahoma' size='2'>Execution Time: <b>" & Round(Timer() - TimeStart, 2) & "s</b></font>"
 sHTML = sHTML & "</body>"
 sHTML = sHTML & "</html>"
 
-Call SendMail(sHTML)
+If attachCSV Then
+	Set oEXE = CreateObject("WScript.Shell").Exec("repadmin.exe /showrepl * /csv")
+	Set F = CreateObject("Scripting.FileSystemObject").CreateTextFile("ad-health-summary.csv")
+		F.Write oEXE.StdOut.ReadAll
+	F.Close
+End If
 
-Function CheckPing(RemoteComputer)
+If emailReport Then Call sendMail(sHTML)
+
+If saveReport Then
+	Set F = CreateObject("Scripting.FileSystemObject").CreateTextFile(pathReportOutput)
+		F.Write sHTML
+	F.Close
+End If
+
+'###################################################
+'	END OF CODE - DON'T EDIT
+'###################################################
+'	INTERNAL FUNCTIONS - DON'T EDIT
+'###################################################
+
+Function checkPing(RemoteComputer)
 	Set oWMI = GetObject("winmgmts:\\.\root\CIMV2")
 	If oWMI.Get("Win32_PingStatus.Address='" & RemoteComputer & "'").StatusCode = 0 Then
-		CheckPing = True
+		checkPing = True
 	Else
-		CheckPing = False
+		checkPing = False
 	End if
 End Function
 
-Function CheckService(RemoteComputer, ServiceName)
+Function checkService(RemoteComputer, ServiceName)
 	Set oWMI = GetObject("winmgmts:\\" & RemoteComputer & "\root\CIMV2")
-	If oWMI.Get("Win32_Service.Name='" & serviceName & "'").State = "Running" Then
+	If oWMI.Get("Win32_Service.Name='" & serviceName & "'").State = serviceState Then
 		sHTML = sHTML & "<td bgcolor='LightGreen' align=center><b>Success</b></td>" & vbCrLf
 	Else
 		sHTML = sHTML & "<td bgcolor='Red' align=center><b>Failed</b></td>" & vbCrLf
 	End If
 End Function
 
-Function CheckDcDiag(RemoteComputer, sTest)
+Function checkDcDiag(RemoteComputer, sTest)
 	Set oEXE = CreateObject("WScript.Shell").Exec("dcdiag.exe /test:" & sTest & " /s:" & RemoteComputer)
 	If InStr(oEXE.StdOut.ReadAll, "passed test " & sTest) > 0 Then
 		sHTML = sHTML & "<td bgcolor='LightGreen' align=center><b>Success</b></td>" & vbCrLf
@@ -122,28 +179,29 @@ Function CheckDcDiag(RemoteComputer, sTest)
 	End If
 End Function
 
-Function CheckRepadmin()
+Function checkRepadmin()
 	Set oEXE = CreateObject("WScript.Shell").Exec("repadmin.exe /replsummary * /bysrc /bydest")
-	CheckRepadmin = "<pre>" & oEXE.StdOut.ReadAll & "</pre>" & vbCrLf
+	checkRepadmin = "<br><pre>" & oEXE.StdOut.ReadAll & "</pre><br>" & vbCrLf
 End Function
 
-Function SendMail(txtBody)
+Function sendMail(txtBody)
 	oCDO = "http://schemas.microsoft.com/cdo/configuration/"
 	Set oMSG = CreateObject("CDO.Message")
-		oMSG.Subject = "Active Directory Health Summary"
-		oMSG.From = "monitoring@mydomain.com"
-		oMSG.To = "sysadmin@mydomain.com"
-		'oMSG.Cc = "sysadmin2@mydomain.com" 
+		oMSG.Subject = emailSubject
+		oMSG.From = emailFrom
+		oMSG.To = emailTo
+		If emailCc <> "" Then oMSG.Cc = emailCc
 		oMSG.HTMLBody = txtBody
+		If attachCSV Then oMSG.AddAttachment CreateObject("WScript.Shell").CurrentDirectory & "\ad-health-summary.csv"
 		With oMSG.Configuration.Fields
 			.Item(oCDO & "sendusing") = 2
-			.Item(oCDO & "smtpserverport") = 25
-			.Item(oCDO & "smtpauthenticate") = 1
+			.Item(oCDO & "smtpserverport") = emailPort
+			.Item(oCDO & "smtpauthenticate") = emailAuth
 			.Item(oCDO & "smtpconnectiontimeout") = 60
-			.Item(oCDO & "sendusername") = "monitoring@mydomain.com"
-			.Item(oCDO & "sendpassword") = "p4ssw0rd"
-			.Item(oCDO & "smtpserver") = "mail.monitoring.com"
-			.Item(oCDO & "smtpusessl") = False
+			.Item(oCDO & "sendusername") = emailSenderUser
+			.Item(oCDO & "sendpassword") = emailSenderPassword
+			.Item(oCDO & "smtpserver") = emailServer
+			.Item(oCDO & "smtpusessl") = emailSSL
 			.Update
 		End With
 	oMSG.Send
