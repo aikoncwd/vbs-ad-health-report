@@ -200,13 +200,13 @@ If attachCSV Then
 	F.Close
 End If
 
-If emailReport Then Call sendMail(sHTML)
-
 If saveReport Then
 	Set F = CreateObject("Scripting.FileSystemObject").CreateTextFile(pathReportOutput)
 		F.Write sHTML
 	F.Close
 End If
+
+If emailReport Then Call sendMail(sHTML)
 
 '###################################################
 '	END OF CODE - DON'T EDIT
