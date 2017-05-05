@@ -21,7 +21,7 @@
 	'E-mail settings, edit by your own
 	emailSubject = "Active Directory Health Summary"
 	emailFrom = "monitoring@mydomain.com"
-	emailTo = "jgonzalez@cet10.com"
+	emailTo = "sysadmin@mydomain.com"
 	emailCc = "" 
 	emailPort = 25
 	emailAuth = 1	
