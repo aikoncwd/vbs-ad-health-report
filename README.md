@@ -4,9 +4,15 @@ VBS Script that check's your Active Directory Health status and report using e-m
 ![](https://i.imgur.com/zyd7YiY.png)
 
 # How to install / use
-Download a raw copy of the `vbs-ad-health-report.vbs` script, save it in your main Active Directory Domain Controller (for example C:\scripts\vbs-ad-health-report.vbs). Open the script with any text editor ([Notepad++](https://notepad-plus-plus.org/download) recommended). At **line 130** you will find a function called `SendMail()`, edit and configure your own e-mail settings (*GMail* supported!). Save changes and double-click to execute and test the script.
+Download a raw copy of the `vbs-ad-health-report.vbs` script, save it in your main Active Directory Domain Controller (for example C:\scripts\vbs-ad-health-report.vbs). Open the script with any text editor ([Notepad++](https://notepad-plus-plus.org/download) recommended).
 
-If everyting works fine, create a new scheduled task to run this script automatically (1 run per day recommended):
+![](https://i.imgur.com/Hd4hrv1.png)
+
+serviceState and organizationUnitDC are important variables to edit:
+- serviceState: The status string of a *running* service. Edit if you use a non-english OS
+- organizationUnitDC: The name of the OU where you store your DC's. Edit if you use a custom OU
+
+Othe lines are for customize the levels of reports (e-mail, CSV attachment, outputFile, ...), just change **True** or **False**. Configure then your e-mail server settings (*GMail* supported!). Save changes and double-click to execute and test the script. If everyting works fine, create a new scheduled task to run this script automatically (1 run per day recommended):
 
 ![](https://i.imgur.com/JgS151V.png)
 
