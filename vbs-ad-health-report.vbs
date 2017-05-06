@@ -123,6 +123,7 @@ If hardwareReport Then
 			Call checkRAMUsage(remoteComputer)
 			sHTML = sHTML & "</tr>" & vbCrLf
 		Else
+			isError = True
 			remoteComputer = oComputer
 			sHTML = sHTML & "<tr>" & vbCrLf
 			sHTML = sHTML & "<td bgcolor='DarkGray' align=center><b>" & remoteComputer & "</b></td>" & vbCrLf
