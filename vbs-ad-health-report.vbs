@@ -115,7 +115,7 @@ If hardwareReport Then
 
 	
 	For Each oComputer In oDC
-		If checkPing(remoteComputer) Then
+		If checkPing(oComputer) Then
 			remoteComputer = oComputer		
 			sHTML = sHTML & "<tr>" & vbCrLf
 			sHTML = sHTML & "<td bgcolor='DarkGray' align=center><b>" & remoteComputer & "</b></td>" & vbCrLf
