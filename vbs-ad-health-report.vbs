@@ -123,7 +123,6 @@ If hardwareReport Then
 			Call checkRAMUsage(remoteComputer)
 			sHTML = sHTML & "</tr>" & vbCrLf
 		Else
-			isError=True
 			remoteComputer = oComputer
 			sHTML = sHTML & "<tr>" & vbCrLf
 			sHTML = sHTML & "<td bgcolor='DarkGray' align=center><b>" & remoteComputer & "</b></td>" & vbCrLf
@@ -229,8 +228,8 @@ Function checkDiskUsage(RemoteComputer)
 	Set oWMI = GetObject("winmgmts:\\" & RemoteComputer & "\root\CIMV2")
 	Set colHDD = oWMI.ExecQuery("SELECT * FROM Win32_LogicalDisk WHERE Caption = 'C:'", "WQL", &H10 + &H20)
 	For Each objHDD in colHDD
-		HDDsize = Round(objHDD.Size / GB, 2)
-		HDDfree = Round(objHDD.FreeSpace / GB, 2)
+		HDDsize = Round(objHDD.Size / 1073741824, 2)
+		HDDfree = Round(objHDD.FreeSpace / 1073741824, 2)
 		HDDperc = Round((HDDfree * 100) / HDDsize, 2)
 	Next
 	If HDDperc < minHDDfree Then
@@ -239,8 +238,8 @@ Function checkDiskUsage(RemoteComputer)
 	Else
 		celColor = "LightGreen"
 	End If
-	sHTML = sHTML & "<td bgcolor='LightGreen' align=center><b>" & HDDsize & " Gb</b></td>" & vbCrLf
-	sHTML = sHTML & "<td bgcolor='LightGreen' align=center><b>" & HDDfree & " Gb</b></td>" & vbCrLf
+	sHTML = sHTML & "<td bgcolor='LightGreen' align=center><b>" & HDDsize & " GB</b></td>" & vbCrLf
+	sHTML = sHTML & "<td bgcolor='LightGreen' align=center><b>" & HDDfree & " GB</b></td>" & vbCrLf
 	sHTML = sHTML & "<td bgcolor='" & celColor & "' align=center><b>" & HDDperc & " %</b></td>" & vbCrLf
 		
 End Function
@@ -249,11 +248,11 @@ Function checkRAMUsage(RemoteComputer)
 	Set oWMI = GetObject("winmgmts:\\" & RemoteComputer & "\root\CIMV2")
 	Set colRAM = oWMI.ExecQuery("SELECT * FROM Win32_PerfFormattedData_PerfOS_Memory", "WQL", &H10 + &H20)
 	For Each objRAM in colRAM
-		RAMfree = Round(objRAM.AvailableBytes / GB, 2)
+		RAMfree = Round(objRAM.AvailableBytes / 1048576, 2)
 	Next
 	Set colRAM = oWMI.ExecQuery("SELECT * FROM Win32_ComputerSystem", "WQL", &H10 + &H20)
 	For Each objRAM in colRAM
-		RAMsize = Round(objRAM.TotalPhysicalMemory / GB, 2)
+		RAMsize = Round(objRAM.TotalPhysicalMemory / 1048576, 2)
 	Next
 	RAMperc = Round((RAMfree * 100) / RAMsize, 2)
 	If RAMperc < minRAMfree Then
@@ -262,8 +261,8 @@ Function checkRAMUsage(RemoteComputer)
 	Else
 		celColor = "LightGreen"
 	End If	
-	sHTML = sHTML & "<td bgcolor='LightGreen' align=center><b>" & RAMsize & " Gb</b></td>" & vbCrLf
-	sHTML = sHTML & "<td bgcolor='LightGreen' align=center><b>" & RAMfree & " Gb</b></td>" & vbCrLf
+	sHTML = sHTML & "<td bgcolor='LightGreen' align=center><b>" & RAMsize & " MB</b></td>" & vbCrLf
+	sHTML = sHTML & "<td bgcolor='LightGreen' align=center><b>" & RAMfree & " MB</b></td>" & vbCrLf
 	sHTML = sHTML & "<td bgcolor='" & celColor & "' align=center><b>" & RAMperc & " %</b></td>" & vbCrLf
 End Function
 
