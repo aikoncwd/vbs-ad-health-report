@@ -1,11 +1,10 @@
 '###################################################
-' 	TO-DO LIST
-' 	[ ] - Telegram reports
-'
+' 	Author:	AikonCWD
+' 	Source:	https://github.com/aikoncwd/vbs-ad-health-report
+'	Ver:	3.5
 '###################################################
 '	IMPORTANT VARIABLES TO EDIT
 '###################################################
-	
 	'This script will find automatically all your DC servers stored in the default OU 'Domain Controllers'
 	'If you have a custom OU name for your DC server, set it on organizationUnitDC variable.
 	'
@@ -55,9 +54,6 @@ If usingOU Then
 	Set oRD = GetObject("LDAP://RootDSE")
 	Set getoDC = GetObject("LDAP://ou=" & organizationUnitDC & ", " & oRD.Get("defaultNamingContext"))
 	computers=Enumerate(getoDC)
-	For Each x in computers
-		'Wscript.Echo "-- " & x
-	Next
 	oDC = computers
 End If
 sHTML = ""
@@ -97,7 +93,6 @@ If hardwareReport Then
 	sHTML = sHTML & "<td colspan='7' height='25' align='center'>" & vbCrLf
 	sHTML = sHTML & "<font face='tahoma' color='DarkBlue' size='4'><strong>Hardware Status Report</strong></font>" & vbCrLf
 	sHTML = sHTML & "</td></tr></table>" & vbCrLf
-
 	sHTML = sHTML & "<table width='100%'>" & vbCrLf
 	sHTML = sHTML & "<tr bgcolor='FireBrick'>" & vbCrLf
 	sHTML = sHTML & "<td align='center' rowspan=2><b><font color='white'>Server</font></b></td>" & vbCrLf
@@ -112,30 +107,24 @@ If hardwareReport Then
 	sHTML = sHTML & "<td align='center'><b><font color='white'>Free RAM</font></b></td>" & vbCrLf
 	sHTML = sHTML & "<td align='center'><b><font color='white'>% Free</font></b></td>" & vbCrLf
 	sHTML = sHTML & "</tr>" & vbCrLf
-
 	
 	For Each oComputer In oDC
+		remoteComputer = oComputer		
+		sHTML = sHTML & "<tr>" & vbCrLf
+		sHTML = sHTML & "<td bgcolor='DarkGray' align=center><b>" & remoteComputer & "</b></td>" & vbCrLf
 		If checkPing(oComputer) Then
-			remoteComputer = oComputer		
-			sHTML = sHTML & "<tr>" & vbCrLf
-			sHTML = sHTML & "<td bgcolor='DarkGray' align=center><b>" & remoteComputer & "</b></td>" & vbCrLf
 			Call checkDiskUsage(remoteComputer)
 			Call checkRAMUsage(remoteComputer)
 			sHTML = sHTML & "</tr>" & vbCrLf
 		Else
 			isError = True
-			remoteComputer = oComputer
-			sHTML = sHTML & "<tr>" & vbCrLf
-			sHTML = sHTML & "<td bgcolor='DarkGray' align=center><b>" & remoteComputer & "</b></td>" & vbCrLf
-			celColor = "Red"			
-			sHTML = sHTML & "<td bgcolor='" & celColor & "' align=center><b>NO CONTACT</b></td>" & vbCrLf
-			sHTML = sHTML & "<td bgcolor='" & celColor & "' align=center><b>NO CONTACT</b></td>" & vbCrLf
-			sHTML = sHTML & "<td bgcolor='" & celColor & "' align=center><b>NO CONTACT</b></td>" & vbCrLf
-			sHTML = sHTML & "<td bgcolor='" & celColor & "' align=center><b>NO CONTACT</b></td>" & vbCrLf
-			sHTML = sHTML & "<td bgcolor='" & celColor & "' align=center><b>NO CONTACT</b></td>" & vbCrLf
-			sHTML = sHTML & "<td bgcolor='" & celColor & "' align=center><b>NO CONTACT</b></td>" & vbCrLf
+			sHTML = sHTML & "<td bgcolor='Red' align=center><b>NO CONTACT</b></td>" & vbCrLf
+			sHTML = sHTML & "<td bgcolor='Red' align=center><b>NO CONTACT</b></td>" & vbCrLf
+			sHTML = sHTML & "<td bgcolor='Red' align=center><b>NO CONTACT</b></td>" & vbCrLf
+			sHTML = sHTML & "<td bgcolor='Red' align=center><b>NO CONTACT</b></td>" & vbCrLf
+			sHTML = sHTML & "<td bgcolor='Red' align=center><b>NO CONTACT</b></td>" & vbCrLf
+			sHTML = sHTML & "<td bgcolor='Red' align=center><b>NO CONTACT</b></td>" & vbCrLf
 			sHTML = sHTML & "</tr>" & vbCrLf
-			
 		End If
 	Next
 	sHTML = sHTML & "</table><br>"
@@ -162,7 +151,6 @@ sHTML = sHTML & "<td align='center'><b><font color='white'>FSMO</font></b></td>"
 sHTML = sHTML & "<td align='center'><b><font color='white'>SysVol</font></b></td>" & vbCrLf
 sHTML = sHTML & "<td align='center'><b><font color='white'>Topology</font></b></td>" & vbCrLf
 sHTML = sHTML & "</tr>" & vbCrLf
-
 
 For Each oComputer In oDC
 	remoteComputer = oComputer
@@ -242,7 +230,6 @@ Function checkDiskUsage(RemoteComputer)
 	sHTML = sHTML & "<td bgcolor='LightGreen' align=center><b>" & HDDsize & " GB</b></td>" & vbCrLf
 	sHTML = sHTML & "<td bgcolor='LightGreen' align=center><b>" & HDDfree & " GB</b></td>" & vbCrLf
 	sHTML = sHTML & "<td bgcolor='" & celColor & "' align=center><b>" & HDDperc & " %</b></td>" & vbCrLf
-		
 End Function
 
 Function checkRAMUsage(RemoteComputer)
@@ -303,28 +290,17 @@ End Function
 
 Function Enumerate(OU)
 	Dim subOUcomputers
-
 	computers = Array()
 	OU.Filter = Array("computer")
 	For Each oComputer in OU		
-		'Wscript.Echo "-- " & oComputer.cn
-        	computers = AddComputerItem(computers,oComputer.cn)
-        Next
-	
-
+		computers = AddComputerItem(computers,oComputer.cn)
+	Next
 	OU.Filter = Array("container", "organizationalUnit")
 	For Each subou in OU
-	       	'Wscript.Echo "-- " & subou.name
-	       	subOUcomputers = Enumerate(subou)
+		subOUcomputers = Enumerate(subou)
 		computers = CombineArrays(computers,subOUcomputers)					
-        Next
-
-	For Each x in computers
-		'Wscript.Echo "-- " & x
 	Next
-
 	Enumerate = computers
-
 End Function
 
 Function AddComputerItem(arr, val)
@@ -342,20 +318,19 @@ End Function
 Function CombineArrays(array1,array2)
 	Dim combinedarray
 	combinedarray = Array()
-	
 	For each x in array1
 		combinedarray=AddComputerItem(combinedarray,x)
 	Next
-
 	For each y in array2
 		combinedarray=AddComputerItem(combinedarray,y)
 	Next
-
 	CombineArrays = combinedarray
 End Function
 
 Function sendMail(txtBody)
-	If errorOnlyReport And isError Then Exit Function
+	If errorOnlyReport Then
+		If isError Then Exit Function
+	End If
 	oCDO = "http://schemas.microsoft.com/cdo/configuration/"
 	Set oMSG = CreateObject("CDO.Message")
 		oMSG.Subject = emailSubject
