@@ -1,7 +1,7 @@
 '###################################################
 ' 	Author:	AikonCWD
 ' 	Source:	https://github.com/aikoncwd/vbs-ad-health-report
-'	Ver:	3.5
+'	Ver:	3.5.1
 '###################################################
 '	IMPORTANT VARIABLES TO EDIT
 '###################################################
@@ -329,7 +329,7 @@ End Function
 
 Function sendMail(txtBody)
 	If errorOnlyReport Then
-		If isError Then Exit Function
+		If isError = False Then Exit Function
 	End If
 	oCDO = "http://schemas.microsoft.com/cdo/configuration/"
 	Set oMSG = CreateObject("CDO.Message")
