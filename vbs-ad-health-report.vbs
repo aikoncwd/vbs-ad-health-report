@@ -1,7 +1,7 @@
 '###################################################
 ' 	Author:	AikonCWD
 ' 	Source:	https://github.com/aikoncwd/vbs-ad-health-report
-'	Ver:	3.5.1
+'	Ver:	3.5.2
 '###################################################
 '	IMPORTANT VARIABLES TO EDIT
 '###################################################
