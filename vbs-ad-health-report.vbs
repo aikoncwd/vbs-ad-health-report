@@ -1,11 +1,10 @@
 '###################################################
-' 	TO-DO LIST
-' 	[ ] - Telegram reports
-'
+' 	Author:	AikonCWD
+' 	Source:	https://github.com/aikoncwd/vbs-ad-health-report
+'	Ver:	3.5.1
 '###################################################
 '	IMPORTANT VARIABLES TO EDIT
 '###################################################
-	
 	'This script will find automatically all your DC servers stored in the default OU 'Domain Controllers'
 	'If you have a custom OU name for your DC server, set it on organizationUnitDC variable.
 	'
@@ -53,7 +52,9 @@ TimeStart = Timer()
 isError = False
 If usingOU Then
 	Set oRD = GetObject("LDAP://RootDSE")
-	Set oDC = GetObject("LDAP://ou=" & organizationUnitDC & ", " & oRD.Get("defaultNamingContext"))
+	Set getoDC = GetObject("LDAP://ou=" & organizationUnitDC & ", " & oRD.Get("defaultNamingContext"))
+	computers=Enumerate(getoDC)
+	oDC = computers
 End If
 sHTML = ""
 sHTML = sHTML & "<html>" & vbCrLf
@@ -92,7 +93,6 @@ If hardwareReport Then
 	sHTML = sHTML & "<td colspan='7' height='25' align='center'>" & vbCrLf
 	sHTML = sHTML & "<font face='tahoma' color='DarkBlue' size='4'><strong>Hardware Status Report</strong></font>" & vbCrLf
 	sHTML = sHTML & "</td></tr></table>" & vbCrLf
-
 	sHTML = sHTML & "<table width='100%'>" & vbCrLf
 	sHTML = sHTML & "<tr bgcolor='FireBrick'>" & vbCrLf
 	sHTML = sHTML & "<td align='center' rowspan=2><b><font color='white'>Server</font></b></td>" & vbCrLf
@@ -107,20 +107,25 @@ If hardwareReport Then
 	sHTML = sHTML & "<td align='center'><b><font color='white'>Free RAM</font></b></td>" & vbCrLf
 	sHTML = sHTML & "<td align='center'><b><font color='white'>% Free</font></b></td>" & vbCrLf
 	sHTML = sHTML & "</tr>" & vbCrLf
-
-	If usingOU Then oDC.Filter = Array("Computer")
-
+	
 	For Each oComputer In oDC
-		If usingOU Then
-			remoteComputer = oComputer.CN
-		Else
-			remoteComputer = oComputer
-		End If
+		remoteComputer = oComputer		
 		sHTML = sHTML & "<tr>" & vbCrLf
 		sHTML = sHTML & "<td bgcolor='DarkGray' align=center><b>" & remoteComputer & "</b></td>" & vbCrLf
-		Call checkDiskUsage(remoteComputer)
-		Call checkRAMUsage(remoteComputer)
-		sHTML = sHTML & "</tr>" & vbCrLf
+		If checkPing(oComputer) Then
+			Call checkDiskUsage(remoteComputer)
+			Call checkRAMUsage(remoteComputer)
+			sHTML = sHTML & "</tr>" & vbCrLf
+		Else
+			isError = True
+			sHTML = sHTML & "<td bgcolor='Red' align=center><b>NO CONTACT</b></td>" & vbCrLf
+			sHTML = sHTML & "<td bgcolor='Red' align=center><b>NO CONTACT</b></td>" & vbCrLf
+			sHTML = sHTML & "<td bgcolor='Red' align=center><b>NO CONTACT</b></td>" & vbCrLf
+			sHTML = sHTML & "<td bgcolor='Red' align=center><b>NO CONTACT</b></td>" & vbCrLf
+			sHTML = sHTML & "<td bgcolor='Red' align=center><b>NO CONTACT</b></td>" & vbCrLf
+			sHTML = sHTML & "<td bgcolor='Red' align=center><b>NO CONTACT</b></td>" & vbCrLf
+			sHTML = sHTML & "</tr>" & vbCrLf
+		End If
 	Next
 	sHTML = sHTML & "</table><br>"
 End If
@@ -147,14 +152,8 @@ sHTML = sHTML & "<td align='center'><b><font color='white'>SysVol</font></b></td
 sHTML = sHTML & "<td align='center'><b><font color='white'>Topology</font></b></td>" & vbCrLf
 sHTML = sHTML & "</tr>" & vbCrLf
 
-If usingOU Then oDC.Filter = Array("Computer")
-
 For Each oComputer In oDC
-	If usingOU Then
-		remoteComputer = oComputer.CN
-	Else
-		remoteComputer = oComputer
-	End If
+	remoteComputer = oComputer
 	sHTML = sHTML & "<tr>" & vbCrLf
 	sHTML = sHTML & "<td bgcolor='DarkGray' align=center><b>" & remoteComputer & "</b></td>" & vbCrLf
     If checkPing(remoteComputer) Then
@@ -218,8 +217,8 @@ Function checkDiskUsage(RemoteComputer)
 	Set oWMI = GetObject("winmgmts:\\" & RemoteComputer & "\root\CIMV2")
 	Set colHDD = oWMI.ExecQuery("SELECT * FROM Win32_LogicalDisk WHERE Caption = 'C:'", "WQL", &H10 + &H20)
 	For Each objHDD in colHDD
-		HDDsize = Round(objHDD.Size / GB, 2)
-		HDDfree = Round(objHDD.FreeSpace / GB, 2)
+		HDDsize = Round(objHDD.Size / 1073741824, 2)
+		HDDfree = Round(objHDD.FreeSpace / 1073741824, 2)
 		HDDperc = Round((HDDfree * 100) / HDDsize, 2)
 	Next
 	If HDDperc < minHDDfree Then
@@ -228,21 +227,20 @@ Function checkDiskUsage(RemoteComputer)
 	Else
 		celColor = "LightGreen"
 	End If
-	sHTML = sHTML & "<td bgcolor='LightGreen' align=center><b>" & HDDsize & " Gb</b></td>" & vbCrLf
-	sHTML = sHTML & "<td bgcolor='LightGreen' align=center><b>" & HDDfree & " Gb</b></td>" & vbCrLf
+	sHTML = sHTML & "<td bgcolor='LightGreen' align=center><b>" & HDDsize & " GB</b></td>" & vbCrLf
+	sHTML = sHTML & "<td bgcolor='LightGreen' align=center><b>" & HDDfree & " GB</b></td>" & vbCrLf
 	sHTML = sHTML & "<td bgcolor='" & celColor & "' align=center><b>" & HDDperc & " %</b></td>" & vbCrLf
-		
 End Function
 
 Function checkRAMUsage(RemoteComputer)
 	Set oWMI = GetObject("winmgmts:\\" & RemoteComputer & "\root\CIMV2")
 	Set colRAM = oWMI.ExecQuery("SELECT * FROM Win32_PerfFormattedData_PerfOS_Memory", "WQL", &H10 + &H20)
 	For Each objRAM in colRAM
-		RAMfree = Round(objRAM.AvailableBytes / GB, 2)
+		RAMfree = Round(objRAM.AvailableBytes / 1048576, 2)
 	Next
 	Set colRAM = oWMI.ExecQuery("SELECT * FROM Win32_ComputerSystem", "WQL", &H10 + &H20)
 	For Each objRAM in colRAM
-		RAMsize = Round(objRAM.TotalPhysicalMemory / GB, 2)
+		RAMsize = Round(objRAM.TotalPhysicalMemory / 1048576, 2)
 	Next
 	RAMperc = Round((RAMfree * 100) / RAMsize, 2)
 	If RAMperc < minRAMfree Then
@@ -251,8 +249,8 @@ Function checkRAMUsage(RemoteComputer)
 	Else
 		celColor = "LightGreen"
 	End If	
-	sHTML = sHTML & "<td bgcolor='LightGreen' align=center><b>" & RAMsize & " Gb</b></td>" & vbCrLf
-	sHTML = sHTML & "<td bgcolor='LightGreen' align=center><b>" & RAMfree & " Gb</b></td>" & vbCrLf
+	sHTML = sHTML & "<td bgcolor='LightGreen' align=center><b>" & RAMsize & " MB</b></td>" & vbCrLf
+	sHTML = sHTML & "<td bgcolor='LightGreen' align=center><b>" & RAMfree & " MB</b></td>" & vbCrLf
 	sHTML = sHTML & "<td bgcolor='" & celColor & "' align=center><b>" & RAMperc & " %</b></td>" & vbCrLf
 End Function
 
@@ -290,8 +288,49 @@ Function checkRepadmin()
 	checkRepadmin = "<br><pre>" & oEXE.StdOut.ReadAll & "</pre><br>" & vbCrLf
 End Function
 
+Function Enumerate(OU)
+	Dim subOUcomputers
+	computers = Array()
+	OU.Filter = Array("computer")
+	For Each oComputer in OU		
+		computers = AddComputerItem(computers,oComputer.cn)
+	Next
+	OU.Filter = Array("container", "organizationalUnit")
+	For Each subou in OU
+		subOUcomputers = Enumerate(subou)
+		computers = CombineArrays(computers,subOUcomputers)					
+	Next
+	Enumerate = computers
+End Function
+
+Function AddComputerItem(arr, val)
+	If IsArray(arr) then
+		ReDim Preserve arr(UBound(arr) + 1)
+		arr(UBound(arr)) = val
+		AddComputerItem = arr
+	Else 
+		arr = Array(1)
+		arr(0) = val
+		AddComputerItem = arr
+	End If
+End Function
+
+Function CombineArrays(array1,array2)
+	Dim combinedarray
+	combinedarray = Array()
+	For each x in array1
+		combinedarray=AddComputerItem(combinedarray,x)
+	Next
+	For each y in array2
+		combinedarray=AddComputerItem(combinedarray,y)
+	Next
+	CombineArrays = combinedarray
+End Function
+
 Function sendMail(txtBody)
-	If errorOnlyReport And isError Then Exit Function
+	If errorOnlyReport Then
+		If isError = False Then Exit Function
+	End If
 	oCDO = "http://schemas.microsoft.com/cdo/configuration/"
 	Set oMSG = CreateObject("CDO.Message")
 		oMSG.Subject = emailSubject
