@@ -17,13 +17,13 @@
 	organizationUnitDC = "Domain Controllers" 'Default OU where DC's are stored, edit if you use a custom OU
 	
 	hardwareReport = True 'Additional table with hardware related information for each server
-	minHDDfree = 30 'Minimun % HDD FreeSpace to mark as red/error
-	minRAMfree = 20 'Minimun % RAM FreeSpace to mark as red/error
+	minHDDfree = 30 'Minimum % HDD FreeSpace to mark as red/error
+	minRAMfree = 20 'Minimum % RAM FreeSpace to mark as red/error
 	
 	includeRepadmin = True 'Include Replication Summary Report below the table. Nice to have, default: True
 	
 	emailReport = True 'Send the report using e-mail. Nice to have, default: True
-	errorOnlyReport = False 'Send e-mail ONLY if an error occours
+	errorOnlyReport = False 'Send e-mail ONLY if an error occurs
 	attachCSV = True 'Attach a CSV version of the replication report/summary
 	
 	saveReport = True 'Save a file with the report summary
@@ -42,9 +42,9 @@
 	emailSSL = False
 	
 '###################################################
-'	END OF IMPOTANT VARIABLES TO EDIT
+'	END OF IMPORTANT VARIABLES TO EDIT
 '###################################################
-'	BEGIN OF CODE - DON'T EDIT
+'	BEGINNING OF CODE - DON'T EDIT
 '###################################################
 
 GB = 1024 * 1024 * 1024
